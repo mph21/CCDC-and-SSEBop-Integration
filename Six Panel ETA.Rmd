@@ -1,0 +1,164 @@
+---
+title: "Six Panel ETA"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+date: "2023-07-26"
+---
+
+*Generates Six Panel Scatter Plot of CCDC vs LSAT Data*
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(sf)
+library(sp)
+library(rgdal) 
+#library(RStoolbox)
+library(raster)
+library(ncdf4)
+library(RNetCDF)
+library(rasterVis)
+library(maptools)
+library(maps)
+library(date)
+library(abind)
+library(rasterVis)
+library(rts)
+library(matlab)
+library(abind)
+library(RColorBrewer)
+library(fields)
+library(chron)
+library(hydroGOF)
+library(ggplot2)
+library(stringr)
+library(hydroGOF)
+library(bigsnpr)
+library(inlmisc)
+```
+
+
+Read in Raster Data 
+```{r}
+#CCDC Data 
+ccdc_newmexico <- raster("D:\\Average_ETA\\CCDC_ETA\\ccdc_ETA_newmexico.tif")
+ccdc_california <- raster ("D:\\Average_ETA\\CCDC_ETA\\ccdc_ETA_california.tif")
+ccdc_arizona <- raster("D:\\Average_ETA\\CCDC_ETA\\ccdc_ETA_arizona.tif")
+ccdc_colorado <- raster ("D:\\Average_ETA\\CCDC_ETA\\ccdc_ETA_colorado.tif")
+ccdc_oregon <- raster("D:\\Average_ETA\\CCDC_ETA\\ccdc_ETA_oregon.tif")
+ccdc_idaho <- raster ("D:\\Average_ETA\\CCDC_ETA\\ccdc_ETA_idaho.tif")
+
+#LSAT Data 
+lsat_newmexico <- raster("D:\\Average_ETA\\lsat_ETA\\lsat_ETA_newmexico.tif")
+lsat_california <- raster ("D:\\Average_ETA\\lsat_ETA\\lsat_ETA_california.tif")
+lsat_arizona <- raster("D:\\Average_ETA\\lsat_ETA\\lsat_ETA_arizona.tif")
+lsat_colorado <- raster ("D:\\Average_ETA\\lsat_ETA\\lsat_ETA_colorado.tif")
+lsat_oregon <- raster("D:\\Average_ETA\\lsat_ETA\\lsat_ETA_oregon.tif")
+lsat_idaho <- raster ("D:\\Average_ETA\\lsat_ETA\\lsat_ETA_idaho.tif")
+```
+
+
+Reformat data into data frames 
+```{r}
+names <- c("Value", "Data", "State")
+
+df_ccdc_NM <- data.frame(values(ccdc_newmexico))
+df_ccdc_NM$Data <- "CCDC"
+df_ccdc_NM$State <- "New Mexico"
+df_ccdc_NM<- setNames(df_ccdc_NM, names)
+
+df_ccdc_CA <- data.frame(values(ccdc_california))
+df_ccdc_CA$Data <- "CCDC"
+df_ccdc_CA$State <- "California"
+df_ccdc_CA<- setNames(df_ccdc_CA, names)
+
+df_ccdc_CO <- data.frame(values(ccdc_colorado))
+df_ccdc_CO$Data <- "CCDC"
+df_ccdc_CO$State <- "Colorado"
+df_ccdc_CO<- setNames(df_ccdc_CO, names)
+
+df_ccdc_OR <- data.frame(values(ccdc_oregon))
+df_ccdc_OR$Data <- "CCDC"
+df_ccdc_OR$State <- "Oregon"
+df_ccdc_OR<- setNames(df_ccdc_OR, names)
+
+df_ccdc_ID <- data.frame(values(ccdc_idaho))
+df_ccdc_ID$Data <- "CCDC"
+df_ccdc_ID$State <- "Idaho"
+df_ccdc_ID<- setNames(df_ccdc_ID, names)
+
+df_ccdc_AZ <- data.frame(values(ccdc_arizona))
+df_ccdc_AZ$Data <- "CCDC"
+df_ccdc_AZ$State <- "Arizona"
+df_ccdc_AZ<- setNames(df_ccdc_AZ, names)
+
+df_lsat_NM <- data.frame(values(lsat_newmexico))
+df_lsat_NM$Data <- "lsat"
+df_lsat_NM$State <- "New Mexico"
+df_lsat_NM<- setNames(df_lsat_NM, names)
+
+df_lsat_CA <- data.frame(values(lsat_california))
+df_lsat_CA$Data <- "lsat"
+df_lsat_CA$State <- "California"
+df_lsat_CA<- setNames(df_lsat_CA, names)
+
+df_lsat_CO <- data.frame(values(lsat_colorado))
+df_lsat_CO$Data <- "lsat"
+df_lsat_CO$State <- "Colorado"
+df_lsat_CO<- setNames(df_lsat_CO, names)
+
+df_lsat_OR <- data.frame(values(lsat_oregon))
+df_lsat_OR$Data <- "lsat"
+df_lsat_OR$State <- "Oregon"
+df_lsat_OR<- setNames(df_lsat_OR, names)
+
+df_lsat_ID <- data.frame(values(lsat_idaho))
+df_lsat_ID$Data <- "lsat"
+df_lsat_ID$State <- "Idaho"
+df_lsat_ID<- setNames(df_lsat_ID, names)
+
+df_lsat_AZ <- data.frame(values(lsat_arizona))
+df_lsat_AZ$Data <- "lsat"
+df_lsat_AZ$State <- "Arizona"
+df_lsat_AZ<- setNames(df_lsat_AZ, names)
+
+#make long data frame for ggplot
+scatterdataLong <- rbind(df_ccdc_AZ, df_ccdc_CA, df_ccdc_CO, df_ccdc_ID, df_ccdc_NM, df_ccdc_OR, df_lsat_AZ, df_lsat_CA, df_ccdc_CO, df_ccdc_ID, df_ccdc_NM, df_lsat_OR)
+
+scatterdataCCDC <-  rbind(df_ccdc_AZ, df_ccdc_CA, df_ccdc_CO, df_ccdc_ID, df_ccdc_NM, df_ccdc_OR)
+scatterdataCCDC <- setNames(scatterdataCCDC, c("CCDC","Data","State"))
+
+
+scatterdataLSAT <- rbind(df_lsat_AZ, df_lsat_CA, df_lsat_CO, df_lsat_ID, df_lsat_NM, df_lsat_OR)
+scatterdataLSAT <- setNames(scatterdataLSAT, c("LSAT","Data","State"))
+
+
+scatterdataCCDC$LSAT <-scatterdataLSAT$LSAT
+scatterdata <- scatterdataCCDC
+head(scatterdata)
+```
+
+
+
+
+
+Generate log scale and scatter plot
+```{r}
+pal <- inlmisc::GetTolColors(30, scheme = "corkO")  #alt colors corkO, romaO, brocO, vikO, bamO
+my_breaks = c(1, 7, 55, 400, 3000)
+ggplot(scatterdata, aes(x=LSAT, y=CCDC)) + 
+    geom_hex(bins =200) + scale_fill_continuous() + ggtitle("2019 Average ETA")+
+    xlab("Observed (mm/d)") + ylab("CCDC (mm/d)") +
+    ylim(c(0, 6.5)) + xlim(c(0, 6.5))+
+    coord_fixed() +
+    scale_fill_gradientn(name = "Count", trans = "log", breaks = my_breaks,  colours = pal)+ # log scale
+    geom_abline(color="blue") + theme_minimal()+
+    facet_wrap(~ State)
+```
+
+
+
+
